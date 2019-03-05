@@ -35,7 +35,7 @@ class m190305_145632_init_db_rbac_tables extends Migration
         $this->createTable('roles_users', [
             'id' => $this->primaryKey(11)->unsigned(),
             'role_id' => $this->integer(11)->unsigned()->notNull(),
-            'user_id' => $this->bigPrimaryKey(20)->unsigned()->notNull(),
+            'user_id' => $this->bigInteger(20)->unsigned()->notNull(),
         ]);
 
         $this->addForeignKey('fk_roles_permissions_role', 'roles_permissions', 'role_id', 'roles', 'id', 'cascade', 'cascade');
