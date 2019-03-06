@@ -1,8 +1,9 @@
 <?php
 
-namespace vladayson\AccessRules;
+namespace vladayson\AccessRules\models;
 
 use app\models\Users;
+use lhs\Yii2SaveRelationsBehavior\SaveRelationsBehavior;
 use Yii;
 
 /**
@@ -17,6 +18,7 @@ use Yii;
  * @property Roles[] $roles
  * @property RolesPermissions[] $rolesPermissions
  * @property RolesUsers[] $rolesUsers
+ * @property Permissions[] $permissions
  */
 class Roles extends BaseModel
 {
@@ -112,7 +114,7 @@ class Roles extends BaseModel
      */
     public function getPermissions()
     {
-        return $this->hasMany(Permissions::class, ['permission_id' => 'id'])->via('rolesPermissions');
+        return $this->hasMany(Permissions::class, ['id' => 'permission_id'])->via('rolesPermissions');
     }
 
     /**
@@ -124,6 +126,11 @@ class Roles extends BaseModel
         return new RolesQuery(get_called_class());
     }
 
+    /**
+     * @param $userId
+     *
+     * @return array|Roles[]
+     */
     public static function getUserAssignments($userId)
     {
         return self::find()
@@ -132,5 +139,23 @@ class Roles extends BaseModel
             ->andWhere([Users::tableName() . '.id' => $userId])
             ->select(Permissions::tableName() . '.*')
             ->all();
+    }
+
+    /**
+     * @param $roleName
+     *
+     * @return array
+     */
+    public static function getUsersByRole($roleName)
+    {
+        return self::find()
+            ->select(RolesUsers::tableName() . '.user_id')
+            ->innerJoin(
+                RolesUsers::tableName(),
+                RolesUsers::tableName() . '.role_id = ' . Roles::tableName() . '.id OR ' .
+                RolesUsers::tableName() . '.role_id = ' . Roles::tableName() . '.parent_id'
+            )
+            ->andWhere([self::tableName() . '.name' => $roleName])
+            ->column();
     }
 }

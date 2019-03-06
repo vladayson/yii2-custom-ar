@@ -1,8 +1,9 @@
 <?php
 
-namespace vladayson\AccessRules;
+namespace vladayson\AccessRules\models;
 
 use Yii;
+use lhs\Yii2SaveRelationsBehavior\SaveRelationsBehavior;
 
 /**
  * This is the model class for table "permissions".
@@ -14,10 +15,24 @@ use Yii;
  *
  * @property Permissions $parent
  * @property Permissions[] $permissions
+ * @property Roles[] $roles
  * @property RolesPermissions[] $rolesPermissions
  */
 class Permissions extends BaseModel
 {
+
+    public function behaviors()
+    {
+        return [
+            'saveRelations' => [
+                'class'     => SaveRelationsBehavior::class,
+                'relations' => [
+                    'permissions',
+                    'roles'
+                ],
+            ],
+        ];
+    }
     /**
      * {@inheritdoc}
      */
@@ -77,11 +92,53 @@ class Permissions extends BaseModel
     }
 
     /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getRoles()
+    {
+        return $this->hasMany(Roles::class, ['role_id' => 'id'])->via('rolesPermissions');
+    }
+
+    /**
      * {@inheritdoc}
      * @return PermissionsQuery the active query used by this AR class.
      */
     public static function find()
     {
         return new PermissionsQuery(get_called_class());
+    }
+
+    /**
+     * @param $userId
+     * @param $permissionName
+     *
+     * @return array|Permissions[]
+     */
+    public static function getUserPermissions($userId, $permissionName = null)
+    {
+        $rolesPermissionsTable = RolesPermissions::tableName();
+        $rolesUsersTable = RolesUsers::tableName();
+        $permissionsTable = Permissions::tableName();
+        $rolesTable = Roles::tableName();
+
+        $data = Permissions::find()
+            ->innerJoin(
+                $rolesPermissionsTable,
+                "({$rolesPermissionsTable}.permission_id = {$permissionsTable}.id OR {$rolesPermissionsTable}.permission_id = {$permissionsTable}.parent_id)"
+            )
+            ->innerJoin(
+                $rolesTable,
+                "({$rolesPermissionsTable}.role_id = {$rolesTable}.id OR {$rolesPermissionsTable}.role_id = {$rolesTable}.parent_id)"
+            )
+            ->innerJoin(
+                $rolesUsersTable,
+                "({$rolesUsersTable}.role_id = {$rolesTable}.id OR {$rolesPermissionsTable}.role_id = {$rolesTable}.parent_id)"
+            )
+            ->andWhere(["{$rolesUsersTable}.user_id" => $userId]);
+        if ($permissionName) {
+            $data = $data->andWhere(["{$permissionsTable}.name" => $permissionName]);
+        }
+
+        return $data->all();
     }
 }

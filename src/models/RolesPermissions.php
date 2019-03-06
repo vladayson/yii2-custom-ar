@@ -1,6 +1,6 @@
 <?php
 
-namespace vladayson\AccessRules;
+namespace vladayson\AccessRules\models;
 
 use Yii;
 

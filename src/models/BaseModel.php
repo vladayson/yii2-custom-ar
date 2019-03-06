@@ -1,6 +1,6 @@
 <?php
 
-namespace vladayson\AccessRules;
+namespace vladayson\AccessRules\models;
 
 use lhs\Yii2SaveRelationsBehavior\SaveRelationsBehavior;
 use yii\db\ActiveQuery;
@@ -13,6 +13,8 @@ use yii\db\ActiveRecord;
  */
 class BaseModel extends ActiveRecord
 {
+    public $tableName = false;
+
     public function behaviors()
     {
         return [
@@ -26,12 +28,13 @@ class BaseModel extends ActiveRecord
     /**
      * @param array $attributesToCheck
      *
-     * @return Roles
+     * @return BaseModel
      */
     public function createOrReturn($attributesToCheck = ['name'])
     {
+        $class = get_called_class();
         /** @var ActiveQuery $obj */
-        $obj = (new self())->find();
+        $obj = (new $class())->find();
         foreach ($attributesToCheck as $attributeName) {
             $obj = $obj->andWhere([
                 $attributeName => $this->{$attributeName}
@@ -39,7 +42,9 @@ class BaseModel extends ActiveRecord
         }
         $obj = $obj->one();
         if ($obj) {
-            $this->{$this->getPrimaryKey()} = $obj->{$obj->getPrimaryKey()};
+            $this->{$roles->tableSchema->primaryKey[0] ?? 'id'} = $obj->getPrimaryKey();
+        } else {
+            $obj = new $class($this->getAttributes());
         }
 
         $obj->save();
