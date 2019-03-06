@@ -1,7 +1,8 @@
 <?php
 
-namespace app\models;
+namespace vladayson\AccessRules;
 
+use app\models\Users;
 use Yii;
 
 /**
@@ -17,8 +18,21 @@ use Yii;
  * @property RolesPermissions[] $rolesPermissions
  * @property RolesUsers[] $rolesUsers
  */
-class Roles extends \yii\db\ActiveRecord
+class Roles extends BaseModel
 {
+    public function behaviors()
+    {
+        return [
+            'saveRelations' => [
+                'class'     => SaveRelationsBehavior::class,
+                'relations' => [
+                    'permissions',
+                    'roles'
+                ],
+            ],
+        ];
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -86,11 +100,37 @@ class Roles extends \yii\db\ActiveRecord
     }
 
     /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getUsers()
+    {
+        return $this->hasMany(Users::class, ['user_id' => 'id'])->via('rolesUsers');
+    }
+
+    /**
+     * @return \yii\db\ActiveQuery
+     */
+    public function getPermissions()
+    {
+        return $this->hasMany(Permissions::class, ['permission_id' => 'id'])->via('rolesPermissions');
+    }
+
+    /**
      * {@inheritdoc}
      * @return RolesQuery the active query used by this AR class.
      */
     public static function find()
     {
         return new RolesQuery(get_called_class());
+    }
+
+    public static function getUserAssignments($userId)
+    {
+        return self::find()
+            ->joinWith('users')
+            ->joinWith('permissions')
+            ->andWhere([Users::tableName() . '.id' => $userId])
+            ->select(Permissions::tableName() . '.*')
+            ->all();
     }
 }

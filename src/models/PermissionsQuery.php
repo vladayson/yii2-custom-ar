@@ -1,6 +1,6 @@
 <?php
 
-namespace app\models;
+namespace vladayson\AccessRules;
 
 /**
  * This is the ActiveQuery class for [[Permissions]].

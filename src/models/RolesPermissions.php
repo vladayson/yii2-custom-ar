@@ -1,6 +1,6 @@
 <?php
 
-namespace app\models;
+namespace vladayson\AccessRules;
 
 use Yii;
 
@@ -14,7 +14,7 @@ use Yii;
  * @property Permissions $permission
  * @property Roles $role
  */
-class RolesPermissions extends \yii\db\ActiveRecord
+class RolesPermissions extends BaseModel
 {
     /**
      * {@inheritdoc}
