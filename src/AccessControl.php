@@ -150,11 +150,11 @@ class AccessControl extends Behavior
      */
     public function beforeAction($action)
     {
-        $userId = \Yii::$app->user->getId();
-        $user = \Yii::$app->user;
-        $errors = [];
-
         if ($this->rules) {
+            $userId = \Yii::$app->user->getId();
+            $user = \Yii::$app->user;
+            $errors = [];
+            
             foreach ($this->rules as $ruleConfig) {
                 if (empty($ruleConfig['class'])) {
                     $ruleConfig['class'] = AccessRule::class;
