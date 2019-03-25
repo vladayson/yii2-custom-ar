@@ -35,8 +35,18 @@ class AccessRule extends Component
     public function checkAccess($action)
     {
         $hasUser = false;
-        $userId = @\Yii::$app->user->id ?? 0;
+        $userId = !\Yii::$app->user->isGuest ? \Yii::$app->user->id : 0;
 
+        foreach ($this->roles as $roleName) {
+            $usersIds = Roles::getUsersByRole($roleName);
+            if (in_array($userId, $usersIds)) {
+                $hasUser = true;
+                break;
+            }
+        }
+        if (!$hasUser) {
+            return false;
+        }
         if (
             empty($this->actions) ||
             (
@@ -46,24 +56,14 @@ class AccessRule extends Component
         ) {
             return $this->allow;
         }
-        foreach ($this->roles as $roleName) {
-            $usersIds = Roles::getUsersByRole($roleName);
-            if (in_array($userId, $usersIds)) {
-                $hasUser = true;
-                break;
-            }
-        }
-        if (!$hasUser) {
-            return $this->allow;
-        }
         if (
-            in_array($action, $this->actions) &&
+            in_array($action->id, $this->actions) &&
             $hasUser
         ) {
             return $this->allow;
         }
         if (
-            !in_array($action, $this->actions) &&
+            !in_array($action->id, $this->actions) &&
             in_array('*', $this->actions) &&
             $hasUser
         ) {
