@@ -34,6 +34,11 @@ class AccessRule extends Component
      */
     public function checkAccess($action)
     {
+        if (in_array('*', $this->roles))
+        {
+            return $this->allow;
+        }
+
         $hasUser = false;
         $userId = !\Yii::$app->user->isGuest ? \Yii::$app->user->id : 0;
 
@@ -44,9 +49,11 @@ class AccessRule extends Component
                 break;
             }
         }
+
         if (!$hasUser) {
             return false;
         }
+
         if (
             empty($this->actions) ||
             (
