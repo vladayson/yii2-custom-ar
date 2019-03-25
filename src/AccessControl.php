@@ -11,6 +11,7 @@ use vladayson\AccessRules\models\Roles;
 use yii\base\Controller;
 use yii\base\Module;
 use yii\helpers\StringHelper;
+use yii\web\ForbiddenHttpException;
 
 /**
  * Class AccessRules.
@@ -149,8 +150,11 @@ class AccessControl extends Behavior
      */
     public function beforeAction($action)
     {
-        $userId = \Yii::$app->user->getId();
         if ($this->rules) {
+            $userId = \Yii::$app->user->getId();
+            $user = \Yii::$app->user;
+            $errors = [];
+            
             foreach ($this->rules as $ruleConfig) {
                 if (empty($ruleConfig['class'])) {
                     $ruleConfig['class'] = AccessRule::class;
@@ -160,8 +164,13 @@ class AccessControl extends Behavior
                 if ($rule->checkAccess($action)) {
                     return true;
                 } else {
-                    return false;
+                    $errors[] = $action;
                 }
+            }
+
+            if (!empty($errors))
+            {
+                $this->denyAccess($user);
             }
         }
         return true;
@@ -198,5 +207,21 @@ class AccessControl extends Behavior
         }
 
         return $id;
+    }
+
+    /**
+     * Denies the access of the user.
+     * The default implementation will redirect the user to the login page if he is a guest;
+     * if the user is already logged, a 403 HTTP exception will be thrown.
+     * @param User|false $user the current user or boolean `false` in case of detached User component
+     * @throws ForbiddenHttpException if the user is already logged in or in case of detached User component.
+     */
+    protected function denyAccess($user)
+    {
+        if ($user !== false && $user->getIsGuest()) {
+            $user->loginRequired();
+        } else {
+            throw new ForbiddenHttpException(\Yii::t('yii', 'You are not allowed to perform this action.'));
+        }
     }
 }
