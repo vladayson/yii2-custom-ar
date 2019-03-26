@@ -164,7 +164,9 @@ class AccessControl extends Behavior
                 if ($rule->checkAccess($action)) {
                     return true;
                 } else {
-                    $errors[] = $action;
+                    if (!in_array('*', $rule->roles)) {
+                        $errors[] = $action;
+                    }
                 }
             }
 
