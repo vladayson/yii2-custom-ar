@@ -4,6 +4,7 @@ namespace vladayson\AccessRules;
 
 use app\models\Users;
 use vladayson\AccessRules\models\Permissions;
+use yii\base\Action;
 use yii\base\Behavior;
 use yii\base\Component;
 use yii\helpers\ArrayHelper;
@@ -148,7 +149,7 @@ class AccessControl extends Behavior
      * @param Action $action the action to be executed.
      * @return bool whether the action should continue to be executed.
      */
-    public function beforeAction($action)
+    public function beforeAction(Action $action)
     {
         if ($this->rules) {
             $userId = \Yii::$app->user->getId();
@@ -161,12 +162,16 @@ class AccessControl extends Behavior
                 }
                 /** @var AccessRule $rule */
                 $rule = \Yii::createObject($ruleConfig);
-                if ($rule->checkAccess($action)) {
-                    return true;
-                } else {
-                    if (!in_array('*', $rule->roles)) {
+
+                /** @var $result (bool - true/false || 'auth') */
+                $result = $rule->checkAccess($action);
+
+                if ($result !== true) {
+                    if (!in_array(['*'], $rule->roles)) {
                         $errors[] = $action;
                     }
+                } elseif ($result === 'auth') {
+                    return $action->controller->redirect(\Yii::$app->user->loginUrl)->send();
                 }
             }
 
