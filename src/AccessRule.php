@@ -3,6 +3,7 @@
 namespace vladayson\AccessRules;
 
 use vladayson\AccessRules\models\Roles;
+use yii\base\Action;
 use yii\base\Component;
 
 /**
@@ -23,6 +24,11 @@ class AccessRule extends Component
     public $actions = [];
 
     /**
+     * @var array
+     */
+    public $except = [];
+
+    /**
      * @var bool
      */
     public $allow = true;
@@ -32,15 +38,30 @@ class AccessRule extends Component
      *
      * @return bool
      */
-    public function checkAccess($action)
+    public function checkAccess(Action $action)
     {
+        $hasUser = false;
+        $userId = !\Yii::$app->user->isGuest ? \Yii::$app->user->id : 0;
+
         if (in_array('*', $this->roles))
         {
             return $this->allow;
         }
 
-        $hasUser = false;
-        $userId = !\Yii::$app->user->isGuest ? \Yii::$app->user->id : 0;
+        if (in_array($action->id, $this->except))
+        {
+            return $this->allow;
+        }
+
+        if (in_array('@', $this->roles) && $userId === 0)
+        {
+            return 'auth';
+        }
+
+        if (in_array('@', $this->roles) && $userId > 0)
+        {
+            return $this->allow;
+        }
 
         foreach ($this->roles as $roleName) {
             $usersIds = Roles::getUsersByRole($roleName);
@@ -50,31 +71,23 @@ class AccessRule extends Component
             }
         }
 
-        if (!$hasUser) {
-            return false;
-        }
-
-        if (
-            empty($this->actions) ||
-            (
-                in_array('@', $this->roles) &&
-                $userId > 0
-            )
-        ) {
+        if (empty($this->actions) && $hasUser)
+        {
             return $this->allow;
         }
+
         if (
             in_array($action->id, $this->actions) &&
             $hasUser
         ) {
             return $this->allow;
         }
+
         if (
             !in_array($action->id, $this->actions) &&
-            in_array('*', $this->actions) &&
             $hasUser
         ) {
-            return $this->allow;
+            return true;
         }
 
         return false;
