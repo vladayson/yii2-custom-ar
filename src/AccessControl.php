@@ -166,12 +166,14 @@ class AccessControl extends Behavior
                 /** @var $result (bool - true/false || 'auth') */
                 $result = $rule->checkAccess($action);
 
+                if ($result === 'auth') {
+                    return $action->controller->redirect(\Yii::$app->user->loginUrl)->send();
+                }
+
                 if ($result !== true) {
                     if (!in_array('*', $rule->roles)) {
                         $errors[] = $action;
                     }
-                } elseif ($result === 'auth') {
-                    return $action->controller->redirect(\Yii::$app->user->loginUrl)->send();
                 }
             }
 
