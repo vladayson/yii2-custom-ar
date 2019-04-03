@@ -118,6 +118,31 @@ class Roles extends BaseModel
     }
 
     /**
+     * @param $user
+     */
+    public function assignUser($user)
+    {
+        $relation = new RolesUsers();
+        $relation->user_id = $user->id;
+        $relation->role_id = $this->id;
+        $relation->save();
+    }
+
+    /**
+     * @param Permissions[] $permissions
+     */
+    public function assignPermissions(array $permissions)
+    {
+        foreach ($permissions as $permission) {
+            $relation = new RolesPermissions();
+            $relation->permission_id = $permission->id;
+            $relation->role_id = $this->id;
+            $relation->save();
+            unset($relation);
+        }
+    }
+
+    /**
      * {@inheritdoc}
      * @return RolesQuery the active query used by this AR class.
      */

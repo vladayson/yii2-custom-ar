@@ -3,6 +3,7 @@
 namespace vladayson\AccessRules\models;
 
 use lhs\Yii2SaveRelationsBehavior\SaveRelationsBehavior;
+use phpDocumentor\Reflection\Types\Object_;
 use yii\db\ActiveQuery;
 use yii\db\ActiveRecord;
 
@@ -14,6 +15,8 @@ use yii\db\ActiveRecord;
 class BaseModel extends ActiveRecord
 {
     public $tableName = false;
+
+    const a = '';
 
     public function behaviors()
     {
@@ -50,5 +53,24 @@ class BaseModel extends ActiveRecord
         $obj->save();
 
         return $obj;
+    }
+
+    /**
+     * @param Roles | Permissions $child
+     */
+    public function addChild($child)
+    {
+        $child->parent_id = $this->id;
+        $child->save();
+    }
+
+    /**
+     * @param $name
+     *
+     * @return array | ActiveRecord | null
+     */
+    public static function findOneByName($name)
+    {
+        return self::find()->andWhere([Roles::tableName() . '.name' => $name])->one();
     }
 }

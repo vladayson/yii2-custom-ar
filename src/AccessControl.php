@@ -41,18 +41,6 @@ class AccessControl extends Behavior
     }
 
     /**
-     * @param Roles $role
-     * @param Roles $childRole
-     *
-     * @return bool
-     */
-    public function addChildRole(Roles $role, Roles $childRole)
-    {
-        $role->roles = ArrayHelper::merge($role->roles, [$childRole]);
-        return $role->save();
-    }
-
-    /**
      * @param        $name
      * @param string $description
      *
@@ -64,38 +52,6 @@ class AccessControl extends Behavior
             'name' => $name,
             'description' => $description
         ]))->createOrReturn();
-    }
-
-    /**
-     * @param Permissions $permission
-     * @param Permissions $childPermission
-     *
-     * @return bool
-     */
-    public function addChildPermission(Permissions $permission, Permissions $childPermission)
-    {
-        $permission->permissions = ArrayHelper::merge($permission->permissions, [$childPermission]);
-        return $permission->save();
-    }
-
-    /**
-     * @param Roles $role
-     * @param Permissions[] $permissions
-     */
-    public function assignRolePermissions(Roles $role, array $permissions)
-    {
-        $role->permissions = ArrayHelper::merge($role->permissions, $permissions);
-        return $role->save();
-    }
-
-    /**
-     * @param       $user
-     * @param Roles $role
-     */
-    public function assignUserRole($user, Roles $role)
-    {
-        $user->roles = ArrayHelper::merge($user->roles, [$role]);
-        return $user->save();
     }
 
     /**
