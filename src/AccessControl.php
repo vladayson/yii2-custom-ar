@@ -152,37 +152,32 @@ class AccessControl extends Behavior
     public function beforeAction(Action $action)
     {
         if ($this->rules) {
-            $userId = \Yii::$app->user->getId();
             $user = \Yii::$app->user;
-            $errors = [];
-            
+            $roleUser = Roles::getUserRole($user->id);
+
             foreach ($this->rules as $ruleConfig) {
-                if (empty($ruleConfig['class'])) {
-                    $ruleConfig['class'] = AccessRule::class;
+                $role = key($ruleConfig);
+
+                if ($role !== $roleUser && $role !== '*')
+                {
+                    continue;
                 }
+
+                $ruleClass = AccessRule::class;
                 /** @var AccessRule $rule */
-                $rule = \Yii::createObject($ruleConfig);
+                $rule = \Yii::createObject($ruleClass);
 
                 /** @var $result (bool - true/false || 'auth') */
-                $result = $rule->checkAccess($action);
+                $result = $rule->checkAccess($action, $ruleConfig);
 
-                if ($result === 'auth') {
-                    return $action->controller->redirect(\Yii::$app->user->loginUrl)->send();
-                }
-
-                if ($result !== true) {
-                    if (!in_array('*', $rule->roles)) {
-                        $errors[] = $action;
-                    }
+                if ($result === true)
+                {
+                    return true;
                 }
             }
 
-            if (!empty($errors))
-            {
-                $this->denyAccess($user);
-            }
+            $this->denyAccess($user);
         }
-        return true;
     }
 
     /**

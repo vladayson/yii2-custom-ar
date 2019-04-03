@@ -158,4 +158,19 @@ class Roles extends BaseModel
             ->andWhere([self::tableName() . '.name' => $roleName])
             ->column();
     }
+
+    /**
+     * @param int $userId
+     *
+     * @return array
+     */
+    public static function getUserRole(int $userId)
+    {
+        return Roles::find()
+            ->alias('r')
+            ->select(['r.name'])
+            ->innerJoin(RolesUsers::tableName() . ' AS ru', 'ru.role_id = r.id OR ru.role_id = r.parent_id')
+            ->andWhere(['ru.user_id' => $userId])
+            ->scalar();
+    }
 }
