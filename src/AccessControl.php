@@ -114,7 +114,7 @@ class AccessControl extends Behavior
             foreach ($this->rules as $ruleConfig) {
                 $role = key($ruleConfig);
 
-                if ($role !== $roleUser && $role !== '*')
+                if ($role !== $roleUser && mb_strlen($role) > 3)
                 {
                     continue;
                 }
