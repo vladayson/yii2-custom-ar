@@ -164,13 +164,13 @@ class Roles extends BaseModel
      *
      * @return array
      */
-    public static function getUserRole(int $userId)
+    public static function getUserRole(int $userId = null)
     {
         return Roles::find()
             ->alias('r')
             ->select(['r.name'])
             ->innerJoin(RolesUsers::tableName() . ' AS ru', 'ru.role_id = r.id OR ru.role_id = r.parent_id')
             ->andWhere(['ru.user_id' => $userId])
-            ->scalar();
+            ->scalar() ?? '';
     }
 }
