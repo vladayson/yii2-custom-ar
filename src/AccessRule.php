@@ -3,6 +3,7 @@
 namespace vladayson\AccessRules;
 
 use vladayson\AccessRules\models\Roles;
+use Yii;
 use yii\base\Action;
 use yii\base\Component;
 
@@ -38,58 +39,45 @@ class AccessRule extends Component
      *
      * @return bool
      */
-    public function checkAccess(Action $action)
+    public function checkAccess(Action $action, array $roles)
     {
-        $hasUser = false;
-        $userId = !\Yii::$app->user->isGuest ? \Yii::$app->user->id : 0;
+        $role = key($roles);
+        $actions = $roles[$role];
 
-        if (in_array('*', $this->roles))
+        $user = \Yii::$app->user;
+
+        if ($role === '*')
         {
-            return $this->allow;
-        }
-
-        if (in_array($action->id, $this->except))
-        {
-            return $this->allow;
-        }
-
-        if (in_array('@', $this->roles) && $userId === 0)
-        {
-            return 'auth';
-        }
-
-        if (in_array('@', $this->roles) && $userId > 0)
-        {
-            return $this->allow;
-        }
-
-        foreach ($this->roles as $roleName) {
-            $usersIds = Roles::getUsersByRole($roleName);
-            if (in_array($userId, $usersIds)) {
-                $hasUser = true;
-                break;
-            }
-        }
-
-        if (empty($this->actions) && $hasUser)
-        {
-            return $this->allow;
-        }
-
-        if (
-            in_array($action->id, $this->actions) &&
-            $hasUser
-        ) {
-            return $this->allow;
-        }
-
-        if (
-            !in_array($action->id, $this->actions) &&
-            $hasUser
-        ) {
             return true;
         }
 
-        return false;
+        if ($role === '@' && $user->isGuest)
+        {
+            return Yii::$app->getResponse()->redirect(\Yii::$app->user->loginUrl)->send();
+        }
+
+        if ($role === '@' && !$user->isGuest)
+        {
+            return true;
+        }
+
+        $roleUser = Roles::getUserRole($user->id);
+
+        if ($role !== $roleUser)
+        {
+            return false;
+        }
+
+        if (in_array('*', $actions))
+        {
+            return true;
+        }
+
+        if (!in_array($action->id, $actions))
+        {
+            return false;
+        }
+
+        return true;
     }
 }

@@ -118,6 +118,31 @@ class Roles extends BaseModel
     }
 
     /**
+     * @param $user
+     */
+    public function assignUser($user)
+    {
+        $relation = new RolesUsers();
+        $relation->user_id = $user->id;
+        $relation->role_id = $this->id;
+        $relation->save();
+    }
+
+    /**
+     * @param Permissions[] $permissions
+     */
+    public function assignPermissions(array $permissions)
+    {
+        foreach ($permissions as $permission) {
+            $relation = new RolesPermissions();
+            $relation->permission_id = $permission->id;
+            $relation->role_id = $this->id;
+            $relation->save();
+            unset($relation);
+        }
+    }
+
+    /**
      * {@inheritdoc}
      * @return RolesQuery the active query used by this AR class.
      */
@@ -157,5 +182,20 @@ class Roles extends BaseModel
             )
             ->andWhere([self::tableName() . '.name' => $roleName])
             ->column();
+    }
+
+    /**
+     * @param int $userId
+     *
+     * @return array
+     */
+    public static function getUserRole(int $userId = null)
+    {
+        return Roles::find()
+            ->alias('r')
+            ->select(['r.name'])
+            ->innerJoin(RolesUsers::tableName() . ' AS ru', 'ru.role_id = r.id OR ru.role_id = r.parent_id')
+            ->andWhere(['ru.user_id' => $userId])
+            ->scalar() ?? '';
     }
 }

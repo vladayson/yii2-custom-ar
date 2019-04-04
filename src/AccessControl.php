@@ -41,18 +41,6 @@ class AccessControl extends Behavior
     }
 
     /**
-     * @param Roles $role
-     * @param Roles $childRole
-     *
-     * @return bool
-     */
-    public function addChildRole(Roles $role, Roles $childRole)
-    {
-        $role->roles = ArrayHelper::merge($role->roles, [$childRole]);
-        return $role->save();
-    }
-
-    /**
      * @param        $name
      * @param string $description
      *
@@ -64,38 +52,6 @@ class AccessControl extends Behavior
             'name' => $name,
             'description' => $description
         ]))->createOrReturn();
-    }
-
-    /**
-     * @param Permissions $permission
-     * @param Permissions $childPermission
-     *
-     * @return bool
-     */
-    public function addChildPermission(Permissions $permission, Permissions $childPermission)
-    {
-        $permission->permissions = ArrayHelper::merge($permission->permissions, [$childPermission]);
-        return $permission->save();
-    }
-
-    /**
-     * @param Roles $role
-     * @param Permissions[] $permissions
-     */
-    public function assignRolePermissions(Roles $role, array $permissions)
-    {
-        $role->permissions = ArrayHelper::merge($role->permissions, $permissions);
-        return $role->save();
-    }
-
-    /**
-     * @param       $user
-     * @param Roles $role
-     */
-    public function assignUserRole($user, Roles $role)
-    {
-        $user->roles = ArrayHelper::merge($user->roles, [$role]);
-        return $user->save();
     }
 
     /**
@@ -152,37 +108,32 @@ class AccessControl extends Behavior
     public function beforeAction(Action $action)
     {
         if ($this->rules) {
-            $userId = \Yii::$app->user->getId();
             $user = \Yii::$app->user;
-            $errors = [];
-            
+            $roleUser = Roles::getUserRole($user->id);
+
             foreach ($this->rules as $ruleConfig) {
-                if (empty($ruleConfig['class'])) {
-                    $ruleConfig['class'] = AccessRule::class;
+                $role = key($ruleConfig);
+
+                if ($role !== $roleUser && mb_strlen($role) > 3)
+                {
+                    continue;
                 }
+
+                $ruleClass = AccessRule::class;
                 /** @var AccessRule $rule */
-                $rule = \Yii::createObject($ruleConfig);
+                $rule = \Yii::createObject($ruleClass);
 
                 /** @var $result (bool - true/false || 'auth') */
-                $result = $rule->checkAccess($action);
+                $result = $rule->checkAccess($action, $ruleConfig);
 
-                if ($result === 'auth') {
-                    return $action->controller->redirect(\Yii::$app->user->loginUrl)->send();
-                }
-
-                if ($result !== true) {
-                    if (!in_array('*', $rule->roles)) {
-                        $errors[] = $action;
-                    }
+                if ($result === true)
+                {
+                    return true;
                 }
             }
 
-            if (!empty($errors))
-            {
-                $this->denyAccess($user);
-            }
+            $this->denyAccess($user);
         }
-        return true;
     }
 
     /**
